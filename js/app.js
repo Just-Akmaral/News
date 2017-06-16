@@ -1,18 +1,20 @@
+window.ee = new EventEmitter();
+
 var my_news = [
   {
-    author: 'Саша Печкин',
-    text: 'В четчерг, четвертого числа...',
-    bigText: 'в четыре с четвертью часа четыре чёрненьких чумазеньких чертёнка чертили чёрными чернилами чертёж.'
+    author: 'Author',
+    text: 'Today this has happened...',
+    bigText: 'nothing'
   },
   {
-    author: 'Просто Вася',
-    text: 'Считаю, что $ должен стоить 35 рублей!',
-    bigText: 'А евро 42!'
+    author: 'Smb',
+    text: 'My english is...',
+    bigText: 'not good enough'
   },
   {
-    author: 'Гость',
-    text: 'Бесплатно. Скачать. Лучший сайт - http://localhost:3000',
-    bigText: 'На самом деле платно, просто нужно прочитать очень длинное лицензионное соглашение'
+    author: 'Hey',
+    text: 'Go to http://localhost:3000',
+    bigText: 'and have a fun'
   }
 ];
 
@@ -102,9 +104,21 @@ var Add = React.createClass({
   },
   onBtnClickHandler: function(e) {
     e.preventDefault();
+    var textEl = ReactDOM.findDOMNode(this.refs.text);
+
     var author = ReactDOM.findDOMNode(this.refs.author).value;
-    var text = ReactDOM.findDOMNode(this.refs.text).value;
-    alert(author + '\n' + text);
+    var text = textEl.value;
+
+    var item = [{
+      author: author,
+      text: text,
+      bigText: '...'
+    }];
+
+    window.ee.emit('News.add', item);
+
+    textEl.value = '';
+    this.setState({textIsEmpty: true});
   },
   onCheckRuleClick: function(e) {
     this.setState({agreeNotChecked: !this.state.agreeNotChecked}); //устанавливаем значение в state
@@ -145,7 +159,7 @@ var Add = React.createClass({
           ref='alert_button'
           disabled={agreeNotChecked || authorIsEmpty || textIsEmpty}
           >
-          Показать alert
+          Добавить новость
         </button>
       </form>
     );
@@ -154,12 +168,32 @@ var Add = React.createClass({
 
 
 var App = React.createClass({
+  getInitialState: function() {
+    return {
+      news: my_news
+    };
+  },
+  componentDidMount: function() {
+    /* Слушай событие "Создана новость"
+      если событие произошло, обнови this.state.news
+    */
+    var self = this;
+    window.ee.addListener('News.add', function(item) {
+      var nextNews = item.concat(self.state.news);
+      self.setState({news: nextNews});
+    });
+  },
+  componentWillUnmount: function() {
+    /* Больше не слушай событие "Создана новость" */
+     window.ee.removeListener('News.add');
+  },
   render: function() {
+    console.log('render');
     return (
       <div className='app'>
-        <h3>Новости</h3>
         <Add />
-        <News data={my_news} />
+        <h3>Новости</h3>
+        <News data={this.state.news} />
       </div>
     );
   }
